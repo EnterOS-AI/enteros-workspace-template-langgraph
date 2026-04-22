@@ -3,22 +3,29 @@ runtime: langgraph
 description: LangGraph ReAct agent — Python-based with skills, tools, and plugin support
 version: 1.0.0
 tier: 2
-
 model: openai:gpt-4.1-mini
-
 skills: []
-
 tools:
-  - web_search
-  - filesystem
-
+- web_search
+- filesystem
 a2a:
   port: 8000
   streaming: true
   push_notifications: true
-
 delegation:
   retry_attempts: 3
   timeout: 120
-
 template_schema_version: 1
+models:
+- id: openai:gpt-4.1-mini
+  name: GPT-4.1 Mini (OpenAI)
+  required_env:
+  - OPENAI_API_KEY
+- id: openai:gpt-4o
+  name: GPT-4o (OpenAI)
+  required_env:
+  - OPENAI_API_KEY
+- id: openai:o4-mini
+  name: o4-Mini (OpenAI)
+  required_env:
+  - OPENAI_API_KEY
