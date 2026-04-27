@@ -43,8 +43,11 @@ class LangGraphAdapter(BaseAdapter):
         self.system_prompt = result.system_prompt
 
     async def create_executor(self, config: AdapterConfig) -> AgentExecutor:
-        from agent import create_agent
-        from a2a_executor import LangGraphA2AExecutor
+        from molecule_runtime.agent import create_agent
+        from molecule_runtime.a2a_executor import LangGraphA2AExecutor
 
         agent = create_agent(config.model, self.all_tools, self.system_prompt)
         return LangGraphA2AExecutor(agent, heartbeat=config.heartbeat, model=config.model)
+
+
+Adapter = LangGraphAdapter
