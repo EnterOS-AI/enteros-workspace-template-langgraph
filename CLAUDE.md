@@ -210,6 +210,43 @@ docker compose up --build
 
 ---
 
+## Adapter pattern
+
+The langgraph runtime follows the same `BaseAdapter` contract every Molecule template implements (matches the hermes / openclaw shape). `adapter.py` declares `LangGraphAdapter(BaseAdapter)` and exposes it as the module-level `Adapter` symbol so the platform's runtime loader can import it without naming conventions:
+
+```python
+from molecule_runtime.adapters.base import BaseAdapter, AdapterConfig
+from a2a.server.agent_execution import AgentExecutor
+
+class LangGraphAdapter(BaseAdapter):
+    @staticmethod
+    def name() -> str: return "langgraph"
+    ...
+
+Adapter = LangGraphAdapter
+```
+
+### `_common_setup()`
+
+`setup()` delegates to `BaseAdapter._common_setup(config)`, which returns a struct of three things the LangGraph runtime needs and that every adapter resolves the same way:
+
+- `loaded_skills` — skill manifests discovered via `config.yaml`'s `skills:` list
+- `langchain_tools` — built-in + plugin tools wrapped in the LangChain `Tool` interface (LangGraph consumes LangChain-shaped tools natively)
+- `system_prompt` — the rendered system prompt with platform A2A + memory instructions appended
+
+Storing these on `self` keeps `create_executor()` cheap — `setup()` runs once at boot, `create_executor()` runs per request.
+
+### Wiring into the BaseAdapter `execute()` lifecycle
+
+LangGraph graphs are wired in through `create_executor()`, which the platform calls per A2A request:
+
+1. `create_agent(config.model, self.all_tools, self.system_prompt)` builds a LangGraph ReAct graph from `molecule_runtime.agent` — a prebuilt single-node ReAct loop with the tools and system prompt baked in.
+2. The graph is wrapped in `LangGraphA2AExecutor` (from `molecule_runtime.a2a_executor`) and returned as an `AgentExecutor`. The platform then drives the standard `AgentExecutor.execute()` lifecycle against it; the executor handles streaming graph state, surfacing tool calls, and pushing heartbeats via the supplied `config.heartbeat`.
+
+Per-request graph construction is intentional: it keeps state isolated per A2A turn and lets the model/tools list be re-resolved if config has changed. Skill / tool discovery (the expensive one-time work) stays cached on the adapter from `setup()`.
+
+---
+
 ## Note: This Is a Workspace Template, Not a Plugin
 
 This template does **not** contain a `plugin.yaml` or a `rules/` directory. Those
