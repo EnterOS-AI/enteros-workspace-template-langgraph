@@ -229,4 +229,8 @@ jobs:
       # __init__.py (which does `from .adapter import ...` for runtime
       # discovery and can't be satisfied without molecule_runtime
       # installed). See tests/pytest.ini for the full rationale.
-      - run: python3 -m pytest tests/ -v
+      # hashFiles guard makes this safe on templates that haven't yet
+      # ported a tests/ corpus — pytest exits 5 on "no tests collected"
+      # which would otherwise fail the job.
+      - if: hashFiles('tests/**/test_*.py') != ''
+        run: python3 -m pytest tests/ -v
