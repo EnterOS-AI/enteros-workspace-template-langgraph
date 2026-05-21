@@ -13,6 +13,7 @@ WORKDIR /app
 # ARG changes the cache key for the pip install layer below — the
 # fix for the cascade cache trap that bit us 5x on 2026-04-27.
 ARG RUNTIME_VERSION=
+ARG PIP_INDEX_URL=https://git.moleculesai.app/api/packages/molecule-ai/pypi/simple/
 
 # Bump pip + setuptools + wheel BEFORE installing project deps —
 # the python:3.11-slim base ships old transitives (jaraco.context 5.3.0,
@@ -22,9 +23,9 @@ ARG RUNTIME_VERSION=
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt && \
+RUN pip install --no-cache-dir --index-url "${PIP_INDEX_URL}" -r requirements.txt && \
     if [ -n "${RUNTIME_VERSION}" ]; then \
-      pip install --no-cache-dir --upgrade "molecule-ai-workspace-runtime==${RUNTIME_VERSION}"; \
+      pip install --no-cache-dir --index-url "${PIP_INDEX_URL}" --upgrade "molecule-ai-workspace-runtime==${RUNTIME_VERSION}"; \
     fi
 
 COPY adapter.py .
