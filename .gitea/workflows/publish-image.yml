@@ -1,7 +1,7 @@
 name: publish-image
 
-# Builds this workspace template's Dockerfile and pushes it to GHCR as
-# `ghcr.io/molecule-ai/workspace-template-<runtime>:latest` + `:sha-<7>`.
+# Builds this workspace template's Dockerfile and pushes it to ECR as
+# `<ECR_REGISTRY>/molecule-ai/workspace-template-<runtime>:latest` + `:sha-<7>`.
 # The heavy lifting lives in the reusable workflow in molecule-ci.
 
 on:
