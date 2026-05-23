@@ -14,6 +14,7 @@ WORKDIR /app
 # fix for the cascade cache trap that bit us 5x on 2026-04-27.
 ARG RUNTIME_VERSION=
 ARG PIP_INDEX_URL=https://git.moleculesai.app/api/packages/molecule-ai/pypi/simple/
+ARG PIP_EXTRA_INDEX_URL=https://pypi.org/simple/
 
 # Bump pip + setuptools + wheel BEFORE installing project deps —
 # the python:3.11-slim base ships old transitives (jaraco.context 5.3.0,
@@ -23,9 +24,9 @@ ARG PIP_INDEX_URL=https://git.moleculesai.app/api/packages/molecule-ai/pypi/simp
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir --index-url "${PIP_INDEX_URL}" -r requirements.txt && \
+RUN pip install --no-cache-dir --index-url "${PIP_INDEX_URL}" --extra-index-url "${PIP_EXTRA_INDEX_URL}" -r requirements.txt && \
     if [ -n "${RUNTIME_VERSION}" ]; then \
-      pip install --no-cache-dir --index-url "${PIP_INDEX_URL}" --upgrade "molecule-ai-workspace-runtime==${RUNTIME_VERSION}"; \
+      pip install --no-cache-dir --index-url "${PIP_INDEX_URL}" --extra-index-url "${PIP_EXTRA_INDEX_URL}" --upgrade "molecule-ai-workspace-runtime==${RUNTIME_VERSION}"; \
     fi
 
 COPY adapter.py .
