@@ -188,14 +188,24 @@ jobs:
             echo "::error::validate-static did not succeed: $static"
             exit 1
           fi
-          # Preserve compatibility with older runs that skipped runtime validation.
-          if [ "$runtime" != "success" ] && [ "$runtime" != "skipped" ]; then
-            echo "::error::validate-runtime did not succeed: $runtime"
-            exit 1
+          # `skipped` is only acceptable on fork PRs; internal PRs and pushes
+          # must run the live gates.
+          is_fork_pr="${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == true }}"
+          if [ "$runtime" != "success" ]; then
+            if [ "$runtime" = "skipped" ] && [ "$is_fork_pr" = "true" ]; then
+              echo "::notice::validate-runtime skipped on fork PR — allowing aggregate to pass."
+            else
+              echo "::error::validate-runtime did not succeed: $runtime"
+              exit 1
+            fi
           fi
-          if [ "$tests" != "success" ] && [ "$tests" != "skipped" ]; then
-            echo "::error::run-adapter-tests did not succeed: $tests"
-            exit 1
+          if [ "$tests" != "success" ]; then
+            if [ "$tests" = "skipped" ] && [ "$is_fork_pr" = "true" ]; then
+              echo "::notice::tests skipped on fork PR — allowing aggregate to pass."
+            else
+              echo "::error::run-adapter-tests did not succeed: $tests"
+              exit 1
+            fi
           fi
           echo "::notice::Template validation aggregate passed (static=$static, runtime=$runtime, tests=$tests)"
 
@@ -220,13 +230,24 @@ jobs:
             echo "::error::validate-static did not succeed: $static"
             exit 1
           fi
-          if [ "$runtime" != "success" ] && [ "$runtime" != "skipped" ]; then
-            echo "::error::validate-runtime did not succeed: $runtime"
-            exit 1
+          # `skipped` is only acceptable on fork PRs; internal PRs and pushes
+          # must run the live gates.
+          is_fork_pr="${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == true }}"
+          if [ "$runtime" != "success" ]; then
+            if [ "$runtime" = "skipped" ] && [ "$is_fork_pr" = "true" ]; then
+              echo "::notice::validate-runtime skipped on fork PR — allowing all-required to pass."
+            else
+              echo "::error::validate-runtime did not succeed: $runtime"
+              exit 1
+            fi
           fi
-          if [ "$tests" != "success" ] && [ "$tests" != "skipped" ]; then
-            echo "::error::tests did not succeed: $tests"
-            exit 1
+          if [ "$tests" != "success" ]; then
+            if [ "$tests" = "skipped" ] && [ "$is_fork_pr" = "true" ]; then
+              echo "::notice::tests skipped on fork PR — allowing all-required to pass."
+            else
+              echo "::error::tests did not succeed: $tests"
+              exit 1
+            fi
           fi
           echo "::notice::All required CI jobs passed (static=$static, runtime=$runtime, tests=$tests)"
 
