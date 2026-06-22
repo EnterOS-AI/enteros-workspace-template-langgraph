@@ -118,6 +118,18 @@ jobs:
           build-args: |
             RUNTIME_VERSION=${{ needs.resolve-version.outputs.version }}
 
+      # Keep prod ECR storage bounded: apply canonical lifecycle policy after push (idempotent, fail-soft).
+      - name: Ensure ECR lifecycle policy
+        env:
+          IMAGE_NAME: ${{ env.IMAGE_NAME }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.MOLECULE_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.MOLECULE_AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-2
+        run: |
+          set -uo pipefail
+          REPO_NAME="${IMAGE_NAME#*/}"
+          bash scripts/ensure-ecr-lifecycle.sh "${REPO_NAME}"
+
 
   promote-pin:
     # RFC internal#529 Layer A — auto-promote the just-pushed digest to
